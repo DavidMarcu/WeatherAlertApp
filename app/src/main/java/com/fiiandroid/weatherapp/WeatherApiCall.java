@@ -1,6 +1,7 @@
 package com.fiiandroid.weatherapp;
 
 import android.os.AsyncTask;
+import android.util.Log;
 
 import java.io.IOException;
 
@@ -19,8 +20,9 @@ public class WeatherApiCall extends AsyncTask<String, Void, String> {
         HttpUrl httpUrl = HttpUrl.get(baseURL)
                 .newBuilder()
                 .addPathSegment(params[0])
-                .addQueryParameter("q", params[1])
-                .addQueryParameter("units", params[2])
+                .addQueryParameter("lat", params[1])
+                .addQueryParameter("lon", params[2])
+                .addQueryParameter("units", params[3])
                 .addQueryParameter("appid", BuildConfig.weatherAPIKey)
                 .build();
 
@@ -28,8 +30,12 @@ public class WeatherApiCall extends AsyncTask<String, Void, String> {
                 .get()
                 .url(httpUrl)
                 .build();
+        Log.i("REQUEST", request.url().toString());
+
         try (Response response = client.newCall(request).execute()) {
-            return response.body().string();
+            String responseString = response.body().string();
+            Log.i("RESPONSE", responseString);
+            return responseString;
         } catch (IOException e) {
             e.printStackTrace();
         }
