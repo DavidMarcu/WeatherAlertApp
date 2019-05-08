@@ -10,12 +10,11 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 
-public class WeatherApiCall extends AsyncTask<String, Void, String> {
+public class WeatherApiCall{
 
     private static final String baseURL = "https://api.openweathermap.org/data/2.5/";
 
-    @Override
-    protected String doInBackground(String... params) {
+    public String requestWeatherInfo(String... params) {
         OkHttpClient client = new OkHttpClient();
         HttpUrl httpUrl = HttpUrl.get(baseURL)
                 .newBuilder()
