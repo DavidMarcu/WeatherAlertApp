@@ -18,27 +18,31 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-public class LocationTask extends AsyncTask<FusedLocationProviderClient, Void, JSONObject> {
+public class LocationTask{
 
-    @SuppressLint("MissingPermission")
-    @Override
-    protected JSONObject doInBackground(FusedLocationProviderClient... locationProviderClients) {
-        WeatherApiCall weatherApiCall = new WeatherApiCall();
-        Task<Location> locationTask = locationProviderClients[0].getLastLocation();
-        try {
-            Location location = Tasks.await(locationTask);
-            weatherApiCall.execute("weather", String.format(Locale.getDefault(), "%.2f", location.getLatitude()),
-                    String.format(Locale.getDefault(), "%.2f", location.getLongitude()), "metric");
-            return new JSONObject(weatherApiCall.get());
-        } catch (ExecutionException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
+//    private JSONObject weatherResult;
+//    private Location currentLocation;
+//
+//    @SuppressLint("MissingPermission")
+//    @Override
+//    protected JSONObject doInBackground(FusedLocationProviderClient... locationProviderClients) {
+//        WeatherApiCall weatherApiCall = new WeatherApiCall();
+//        Task<Location> weatherTask = locationProviderClients[0].getLastLocation()
+//                .addOnSuccessListener(new OnSuccessListener<Location>() {
+//                    @Override
+//                    public void onSuccess(Location location) {
+//                        if(location != null){
+//                            currentLocation = location;
+//                    }
+//                });
+//
+//        try {
+//            Tasks.await(weatherTask);
+//        } catch (ExecutionException | InterruptedException e) {
+//            e.printStackTrace();
+//        }
+//        return weatherResult;
+//    }
 }
 
 

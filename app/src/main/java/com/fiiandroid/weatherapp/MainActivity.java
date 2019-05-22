@@ -14,6 +14,8 @@ import android.widget.TextView;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -26,27 +28,19 @@ public class MainActivity extends Activity {
 
     private static final int INTERNET_LOCATION_PERMISSIONS = 1;
     private FusedLocationProviderClient locationProviderClient;
+    private JSONObject weatherData;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         locationProviderClient = LocationServices.getFusedLocationProviderClient(this);
+        getData();
     }
 
     @Override
     protected void onStart() {
         super.onStart();
-        JSONObject weatherResult = getData();
-        TextView temperatureTextView = findViewById(R.id.temperatureLabel);
-        String currentText = temperatureTextView.getText().toString();
-        Objects.requireNonNull(weatherResult);
-        try {
-            String updatedText = currentText + " " + weatherResult.getJSONObject("main").getDouble("temp") + "\u00B0C";
-            temperatureTextView.setText(updatedText);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
     }
 
     private boolean checkPermissions(String... permissions) {
@@ -75,20 +69,33 @@ public class MainActivity extends Activity {
         }
     }
 
-    @SuppressLint("MissingPermission")
-    private JSONObject getData() {
+    private void getData() {
         String[] permissions = new String[]{Manifest.permission.INTERNET, Manifest.permission.ACCESS_COARSE_LOCATION};
         if (!checkPermissions(permissions)) {
             ActivityCompat.requestPermissions(this, permissions, INTERNET_LOCATION_PERMISSIONS);
         }
-        LocationTask locationTask = new LocationTask();
-        try {
-            return locationTask.execute(locationProviderClient).get();
-        } catch (ExecutionException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        return null;
+        locationProviderClient.getLastLocation()
+            .addOnSuccessListener(this, location -> {
+                if(location != null){
+                    WeatherApiCall weatherApiCall = new WeatherApiCall();
+                    String weatherResult = weatherApiCall.getWeatherResult("weather", String.format(Locale.getDefault(), "%.2f", location.getLatitude()),
+                                                                           String.format(Locale.getDefault(), "%.2f", location.getLongitude()), "metric");
+                    try {
+                        weatherData = new JSONObject(weatherResult);
+                        TextView temperatureTextView = findViewById(R.id.temperatureLabel);
+                        String currentText = temperatureTextView.getText().toString();
+                        Objects.requireNonNull(weatherData);
+                        try {
+                            String updatedText = currentText + " " + weatherData.getJSONObject("main").getDouble("temp") + "\u00B0C";
+                            temperatureTextView.setText(updatedText);
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                }
+            })
+        .addOnFailureListener(this, new);
     }
 }
