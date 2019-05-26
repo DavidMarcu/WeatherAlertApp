@@ -1,4 +1,7 @@
 <resources>
     <string name="app_name">WeatherApp</string>
     <string name="temperatureLabelText">Temperature:</string>
+    <string name="notificationTitle">Weather Report</string>
+    <string name="notificationButtonText">Add notification time</string>
+    <string name="removeButtonDescription">Remove notification button</string>
 </resources>
