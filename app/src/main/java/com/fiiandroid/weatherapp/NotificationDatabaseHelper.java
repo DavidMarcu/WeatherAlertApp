@@ -17,7 +17,7 @@ import java.util.Locale;
 
 public class NotificationDatabaseHelper extends SQLiteOpenHelper {
 
-    private static final String TAG = "DatabaseHelper";
+    public static final String TAG = "DatabaseHelper";
 
     private static final int DATABASE_VERSION = 1;
     private static final String DATABASE_NAME = "alarms_db";
@@ -108,5 +108,14 @@ public class NotificationDatabaseHelper extends SQLiteOpenHelper {
         SQLiteDatabase db = this.getReadableDatabase();
         String query = "SELECT * FROM " + TABLE_NAME + " ORDER BY 3";
         return db.rawQuery(query, null);
+    }
+
+    public void updateNotification(long oldTimestamp, long newTimestamp){
+        SQLiteDatabase db = this.getWritableDatabase();
+        String rawQuery = "UPDATE " + TABLE_NAME + " SET " + TIMESTAMP_COL + "=" + newTimestamp + " WHERE "
+                + TIMESTAMP_COL + "= ?";
+        Log.i(TAG, "Timestamp in update method: " + oldTimestamp);
+        Cursor result = db.rawQuery(rawQuery, new String[]{String.valueOf(oldTimestamp)});
+        result.close();
     }
 }

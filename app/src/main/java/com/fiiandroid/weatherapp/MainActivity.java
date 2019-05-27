@@ -16,11 +16,7 @@ import android.widget.CursorAdapter;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 
 public class MainActivity extends Activity {
 
@@ -31,20 +27,48 @@ public class MainActivity extends Activity {
     private List<String> notifications;
     private ListView notificationListView;
     private List<Map<String, Object>> itemList;
+    private Context context;
 
     private TimePickerDialog.OnTimeSetListener timePickerListener = (view, hourOfDay, minutes) -> {
         addNotification(hourOfDay, minutes);
         getNotifications();
     };
 
+    private TimerTask notificationUpdates = new TimerTask() {
+        @Override
+        public void run() {
+            AlarmManager alarmMgr = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+            Intent alarmIntent = new Intent(context, NotificationObject.class);
+            PendingIntent alarmPendingIntent = PendingIntent.getBroadcast(context, 0, alarmIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+            NotificationDatabaseHelper notificationDatabaseHelper = NotificationDatabaseHelper.getInstance(context);
+            Cursor cursor = notificationDatabaseHelper.getDataOrderedByTimestamp();
+            long timestamp = new Date().getTime() / 1000L;
+            long currentTime = timestamp;
+            if (cursor.moveToFirst()) {
+                timestamp = cursor.getLong(cursor.getColumnIndexOrThrow(NotificationDatabaseHelper.TIMESTAMP_COL));
+            }
+            if(currentTime > timestamp){
+                alarmMgr.setExact(AlarmManager.RTC_WAKEUP, timestamp * 1000L, alarmPendingIntent);
+                //Increment update with a day;
+                long newTimestamp = timestamp + 86400;
+                Log.i(NotificationDatabaseHelper.TAG, "Timestamp in update method: " + timestamp);
+                notificationDatabaseHelper.updateNotification(timestamp, newTimestamp);
+            }
+            cursor.close();
+        }
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        context = this;
+        Timer notificationTimer = new Timer();
+        notificationTimer.schedule(notificationUpdates, 0, 5000);
         getNotifications();
         addNewNotificationButtonListener();
         requestInternetService();
-        scheduleNotification();
     }
 
     private void getNotifications() {
@@ -92,17 +116,6 @@ public class MainActivity extends Activity {
         }
     }
 
-    private void scheduleNotification(){
-        AlarmManager alarmMgr = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-        Intent alarmIntent = new Intent(this, NotificationObject.class);
-        PendingIntent alarmPendingIntent = PendingIntent.getBroadcast(this, 0, alarmIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-//        Cursor cursor = NotificationDatabaseHelper.getInstance(this).getDataOrderedByTimestamp();
-        long timestamp = new Date().getTime();
-//        if(cursor.moveToFirst()){
-//            timestamp = cursor.getLong(cursor.getColumnIndexOrThrow(NotificationDatabaseHelper.TIMESTAMP_COL));
-//        }
-        alarmMgr.setExact(AlarmManager.RTC_WAKEUP, timestamp + 5000, alarmPendingIntent);
-    }
 
 //    private void getData() {
 //        WeatherApiCall weatherApiCall = new WeatherApiCall();
