@@ -1,9 +1,9 @@
 package com.fiiandroid.weatherapp;
 
 import android.Manifest;
-import android.app.Activity;
-import android.app.AlertDialog;
-import android.app.TimePickerDialog;
+import android.app.*;
+import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.os.Bundle;
@@ -16,7 +16,10 @@ import android.widget.CursorAdapter;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 public class MainActivity extends Activity {
@@ -41,11 +44,12 @@ public class MainActivity extends Activity {
         getNotifications();
         addNewNotificationButtonListener();
         requestInternetService();
+        scheduleNotification();
     }
 
     private void getNotifications() {
         NotificationDatabaseHelper notificationDatabase = NotificationDatabaseHelper.getInstance(this);
-        Cursor cursor = notificationDatabase.getData();
+        Cursor cursor = notificationDatabase.getDataOrderedByTimeText();
 
         notificationListView = findViewById(R.id.notificationList);
         ListAdapter notificationsListAdapter = new CustomSimpleAdapter(this, cursor, CursorAdapter.FLAG_AUTO_REQUERY);
@@ -86,6 +90,18 @@ public class MainActivity extends Activity {
                 }
 
         }
+    }
+
+    private void scheduleNotification(){
+        AlarmManager alarmMgr = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+        Intent alarmIntent = new Intent(this, NotificationObject.class);
+        PendingIntent alarmPendingIntent = PendingIntent.getBroadcast(this, 0, alarmIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+//        Cursor cursor = NotificationDatabaseHelper.getInstance(this).getDataOrderedByTimestamp();
+        long timestamp = new Date().getTime();
+//        if(cursor.moveToFirst()){
+//            timestamp = cursor.getLong(cursor.getColumnIndexOrThrow(NotificationDatabaseHelper.TIMESTAMP_COL));
+//        }
+        alarmMgr.setExact(AlarmManager.RTC_WAKEUP, timestamp + 5000, alarmPendingIntent);
     }
 
 //    private void getData() {

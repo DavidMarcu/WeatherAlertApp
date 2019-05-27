@@ -2,15 +2,13 @@ package com.fiiandroid.weatherapp;
 
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Build;
 import android.support.v4.app.NotificationCompat;
-import android.widget.TextView;
-import android.widget.Toast;
+import android.util.Log;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -28,7 +26,7 @@ public class NotificationObject extends BroadcastReceiver {
         createNotification(context, intent);
     }
 
-    private void createNotification(Context context, Intent fromIntent){
+    private void createNotification(Context context, Intent fromIntent) {
         NotificationManager nm = (NotificationManager) context.getSystemService(NOTIFICATION_SERVICE);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -42,24 +40,37 @@ public class NotificationObject extends BroadcastReceiver {
             notificationChannel.enableVibration(true);
             nm.createNotificationChannel(notificationChannel);
         }
-//        Intent intent = new Intent(context, MainActivity.class);
-//        PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
 
         WeatherApiCall weatherApiCall = new WeatherApiCall();
-        String weatherInfo = weatherApiCall.getWeatherInfo("weather", "Iasi,ro", "metric");
         String temperatureText = null;
+        String windSpeed = null;
+        String clouds = null;
+        String weatherDescription = null;
+        String weatherTitle = null;
+        String pressure = null;
         JSONObject weatherApiResult;
         try {
+            String weatherInfo = weatherApiCall.execute("weather", "Iasi,ro", "metric").get();
             weatherApiResult = new JSONObject(weatherInfo);
             temperatureText = "Temperature: " + weatherApiResult.getJSONObject("main").getDouble("temp") + " \u00B0C";
-        } catch (JSONException e) {
+            pressure = weatherApiResult.getJSONObject("main").getInt("pressure") + " hPa";
+            JSONObject weatherDetails = (JSONObject)weatherApiResult.getJSONArray("weather").get(0);
+            weatherTitle = weatherDetails.getString("main");
+            weatherDescription = weatherDetails.getString("description");
+            clouds = weatherApiResult.getJSONObject("clouds").getInt("all")+"%";
+            windSpeed = weatherApiResult.getJSONObject("wind").getDouble("speed") + "km/h";
+        } catch (JSONException | InterruptedException | ExecutionException e) {
             e.printStackTrace();
         }
 
         NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(context, NOTIFICATION_CHANNEL_ID)
                 .setSmallIcon(R.drawable.sun)
-                .setContentTitle(temperatureText)
-                .setContentText(temperatureText)
+                .setWhen(System.currentTimeMillis())
+                .setContentTitle("Weather report: ")
+                .setContentText("Weather: " + weatherTitle + " --- " + temperatureText)
+                .setStyle(new NotificationCompat.BigTextStyle()
+                        .bigText(temperatureText + "\n" + "Weather: " + weatherDescription + "\n" + "Clouds: " + clouds + "\n" + "Wind speed: "  + windSpeed + "\n"
+                                + "Pressure: " + pressure))
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT);
 
         nm.notify(NOTIFICATION_ID, notificationBuilder.build());
